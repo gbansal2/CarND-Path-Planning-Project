@@ -23,7 +23,7 @@ extern vector<double> map_waypoints_dx;
 extern vector<double> map_waypoints_dy;
 
 void getWayPoints(vector<double>& next_x_vals, vector<double>& next_y_vals, const vector<checkCar>& check_cars, const egoCar& ego_car, 
-	int& lane, double& ref_val, int prev_size,
+	int& lane, int& prev_lane, double& ref_val, int prev_size,
 	double end_path_s, double end_path_d) {
 
 	//video solution
@@ -50,24 +50,120 @@ void getWayPoints(vector<double>& next_x_vals, vector<double>& next_y_vals, cons
       car_s = end_path_s;
     }
 
+    prev_lane = lane;
+
+    bool check_car0 = false;
+    bool check_car1 = false;
+    bool check_car2 = false;
+
+    bool switch_lane = false;
+    /*
     for(int i = 0; i < check_cars.size(); ++i) {
       float d = check_cars[i]._d;
+      double vx = check_cars[i]._vx;
+      double vy = check_cars[i]._vy;
+      double check_speed = sqrt(vx*vx + vy*vy);
+      double check_car_s = check_cars[i]._s;
+
+      check_car_s += ((double)prev_size*0.02*check_speed);
+
       if (d < (2+4*lane+2) && d > (2+4*lane-2)) {
-        double vx = check_cars[i]._vx;
-        double vy = check_cars[i]._vy;
-        double check_speed = sqrt(vx*vx + vy*vy);
-        double check_car_s = check_cars[i]._s;
-
-        check_car_s += ((double)prev_size*0.02*check_speed);
-
-        if ((check_car_s > car_s) && ((check_car_s-car_s) < 30) ) {
-          //ref_val = 29.5;
-          too_close = true;  
-          if (lane > 0)
-            lane = 0;
+        if ((check_car_s > car_s) && ((check_car_s-car_s) < 40) ) {
+            too_close = true;
         }
       }
+
+
+      //check if other cars in lane
+      if (d > 0 && d < 4)
+        check_car0 = true;
+      if (d > 4 && d < 8)
+        check_car1 = true;
+      if (d > 8 && d < 12)
+        check_car2 = true;
     }
+    */
+
+    for(int i = 0; i < check_cars.size(); ++i) {
+      float d = check_cars[i]._d;
+      double vx = check_cars[i]._vx;
+      double vy = check_cars[i]._vy;
+      double check_speed = sqrt(vx*vx + vy*vy);
+      double check_car_s = check_cars[i]._s;
+
+      check_car_s += ((double)prev_size*0.02*check_speed);
+
+      if (d < (2+4*lane+2) && d > (2+4*lane-2)) {
+        if ((check_car_s > car_s) && ((check_car_s-car_s) < 40) ) {
+            too_close = true;
+        }
+      }
+
+      if (too_close == true) {
+      if ((lane == 0) && (d < 8 && d > 4)) {
+        check_car1 = true;
+        if ((check_car_s-car_s) > 40 && (car_s - check_car_s) > 20 ) {
+            //&& abs(car_speed-check_speed) < 10) {
+          lane = 1;
+          switch_lane = true;
+          //too_close = false;
+        }
+      }
+      else if ((lane == 1) && (d < 4 && d > 0)) {
+        check_car0 = true;
+//        if (abs(check_car_s-car_s) > 40 && abs(car_speed-check_speed) < 10) {
+        if ((check_car_s-car_s) > 40  && (car_s - check_car_s) > 20 ) {
+            //&& abs(car_speed-check_speed) < 10) {
+          lane = 0;
+          switch_lane = true;
+          //too_close = false;
+        }
+      }
+      else if ((lane == 1) && (d < 12 && d > 8)) {
+        check_car2 = true;
+        if ((check_car_s-car_s) > 40  && (car_s - check_car_s) > 20) {
+//            && abs(car_speed-check_speed) < 10) {
+          lane = 2;
+          switch_lane = true;
+          //too_close = false;
+        }
+      }
+      else if ((lane == 2) && (d < 8 && d > 4)) {
+        check_car1 = true;
+        if ((check_car_s-car_s) > 40 && (car_s - check_car_s) > 20) {
+ //           && abs(car_speed-check_speed) < 10) {
+          lane = 1;
+          switch_lane = true;
+          //too_close = false;
+        }
+      }
+     }
+
+      //Try to come back to center lane if no car there
+      //if ((lane == 0 || lane == 2) && (d < 8 && d > 4)) {
+      //  if (abs(check_car_s-car_s) > 100 && (car_speed > check_speed)) {
+      //    lane = 1;
+      //  }
+      // }
+    }
+    //No cars in neighboring lane
+    if (too_close == true && switch_lane == false) {
+      if ((lane == 0) && (check_car1 == false))
+        lane = 1;
+      else if ((lane == 1) && (check_car0 == false))
+        lane = 0;
+      else if ((lane == 1) && (check_car2 == false))
+        lane = 2;
+      else if ((lane == 2) && (check_car1 == false))
+        lane = 1;
+    }
+
+
+
+    cout << "too close = " << too_close << "\n";
+    cout << "check_car0 = " << check_car0 << "\n";
+    cout << "check_car1 = " << check_car1 << "\n";
+    cout << "check_car2 = " << check_car2 << "\n";
 
     if(too_close)
       ref_val -= 0.224;
@@ -111,6 +207,7 @@ void getWayPoints(vector<double>& next_x_vals, vector<double>& next_y_vals, cons
 
     }
 
+//    std::vector<double> next_wp0 = getXY(car_s+30,(2+4*lane),
     std::vector<double> next_wp0 = getXY(car_s+30,(2+4*lane),
       map_waypoints_s,map_waypoints_x,map_waypoints_y);
     std::vector<double> next_wp1 = getXY(car_s+60,(2+4*lane),

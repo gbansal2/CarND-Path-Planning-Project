@@ -16,7 +16,7 @@ using namespace std;
 // for convenience
 using json = nlohmann::json;
 
-extern void getWayPoints(vector<double>&, vector<double>&, const vector<checkCar>&, const egoCar&, int& lane, double& ref_val,
+extern void getWayPoints(vector<double>&, vector<double>&, const vector<checkCar>&, const egoCar&, int& lane, int&, double& ref_val,
   int, double, double);
 extern constexpr double pi();
 extern double deg2rad(double x);
@@ -78,12 +78,13 @@ int main() {
   }
 
   int lane = 1;
+  int prev_lane = 1;
 
   double ref_val = 0.;
 
 //  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy,&lane,&ref_val](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
 //                     uWS::OpCode opCode) {
-  h.onMessage([&lane,&ref_val](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+  h.onMessage([&lane,&prev_lane,&ref_val](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -149,7 +150,7 @@ int main() {
               check_cars.push_back(ccar);
             }
 
-            getWayPoints(next_x_vals, next_y_vals, check_cars, ego_car, lane, ref_val,
+            getWayPoints(next_x_vals, next_y_vals, check_cars, ego_car, lane, prev_lane, ref_val,
               prev_size, end_path_s, end_path_d);
 
             json msgJson;
