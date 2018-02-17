@@ -57,6 +57,9 @@ void getWayPoints(vector<double>& next_x_vals, vector<double>& next_y_vals, cons
     bool check_car2 = false;
 
     bool switch_lane = false;
+    bool nolc0 = false;
+    bool nolc1 = false;
+    bool nolc2 = false;
     /*
     for(int i = 0; i < check_cars.size(); ++i) {
       float d = check_cars[i]._d;
@@ -93,49 +96,69 @@ void getWayPoints(vector<double>& next_x_vals, vector<double>& next_y_vals, cons
 
       check_car_s += ((double)prev_size*0.02*check_speed);
 
-      if (d < (2+4*lane+2) && d > (2+4*lane-2)) {
+      if (d < (2+4*prev_lane+2) && d > (2+4*prev_lane-2)) {
         if ((check_car_s > car_s) && ((check_car_s-car_s) < 40) ) {
             too_close = true;
         }
       }
 
       if (too_close == true) {
-      if ((lane == 0) && (d < 8 && d > 4)) {
+      if ((prev_lane == 0) && (d < 8 && d > 4) && !nolc1) {
         check_car1 = true;
-        if ((check_car_s-car_s) > 40 && (car_s - check_car_s) > 20 ) {
+        cout << "cc1: check_car_s - car_s = " << check_car_s - car_s << "\n";
+        if ((check_car_s-car_s) > 40 || ((car_s - check_car_s) > 30 && (car_speed > check_speed))) {
             //&& abs(car_speed-check_speed) < 10) {
           lane = 1;
           switch_lane = true;
+          cout << "changing lane to ..." << lane << "\n";
           //too_close = false;
         }
+        else { lane = prev_lane;
+          nolc1 = true;
+        }
       }
-      else if ((lane == 1) && (d < 4 && d > 0)) {
+      else if ((prev_lane == 1) && (d < 4 && d > 0) && !nolc0) {
         check_car0 = true;
+        cout << "cc0: check_car_s - car_s = " << check_car_s - car_s << "\n";
 //        if (abs(check_car_s-car_s) > 40 && abs(car_speed-check_speed) < 10) {
-        if ((check_car_s-car_s) > 40  && (car_s - check_car_s) > 20 ) {
+        if ((check_car_s-car_s) > 40  || ((car_s - check_car_s) > 30 && (car_speed > check_speed)) ) {
             //&& abs(car_speed-check_speed) < 10) {
           lane = 0;
           switch_lane = true;
+          cout << "changing lane to ..." << lane << "\n";
           //too_close = false;
         }
+        else { lane = prev_lane;
+               nolc0 = true;
+             }
       }
-      else if ((lane == 1) && (d < 12 && d > 8)) {
+      else if ((prev_lane == 1) && (d < 12 && d > 8) && !nolc2) {
         check_car2 = true;
-        if ((check_car_s-car_s) > 40  && (car_s - check_car_s) > 20) {
+        cout << "cc2: check_car_s - car_s = " << check_car_s - car_s << "\n";
+        if ((check_car_s-car_s) > 40  || ((car_s - check_car_s) > 30 && (car_speed > check_speed))) {
 //            && abs(car_speed-check_speed) < 10) {
           lane = 2;
           switch_lane = true;
+          cout << "changing lane to ..." << lane << "\n";
           //too_close = false;
         }
+        else  { lane = prev_lane;
+                 nolc2 = true;
+               }
       }
-      else if ((lane == 2) && (d < 8 && d > 4)) {
+      else if ((prev_lane == 2) && (d < 8 && d > 4) && !nolc1) {
         check_car1 = true;
-        if ((check_car_s-car_s) > 40 && (car_s - check_car_s) > 20) {
+        cout << "cc1: check_car_s - car_s = " << check_car_s - car_s << "\n";
+        if ((check_car_s-car_s) > 40 || ((car_s - check_car_s) > 30 && (car_speed > check_speed))) {
  //           && abs(car_speed-check_speed) < 10) {
           lane = 1;
           switch_lane = true;
+          cout << "changing lane to ..." << lane << "\n";
           //too_close = false;
         }
+        else { lane = prev_lane;
+             nolc1 = true;
+           }
       }
      }
 
@@ -148,16 +171,19 @@ void getWayPoints(vector<double>& next_x_vals, vector<double>& next_y_vals, cons
     }
     //No cars in neighboring lane
     if (too_close == true && switch_lane == false) {
-      if ((lane == 0) && (check_car1 == false))
+      if ((prev_lane == 0) && (check_car1 == false))
         lane = 1;
-      else if ((lane == 1) && (check_car0 == false))
+      else if ((prev_lane == 1) && (check_car0 == false))
         lane = 0;
-      else if ((lane == 1) && (check_car2 == false))
+      else if ((prev_lane == 1) && (check_car2 == false))
         lane = 2;
-      else if ((lane == 2) && (check_car1 == false))
+      else if ((prev_lane == 2) && (check_car1 == false))
         lane = 1;
     }
 
+    //Don't change two lanes at same time
+    if (abs(prev_lane - lane) == 2)
+      lane = prev_lane;
 
 
     cout << "too close = " << too_close << "\n";
@@ -222,6 +248,8 @@ void getWayPoints(vector<double>& next_x_vals, vector<double>& next_y_vals, cons
     ptsy.push_back(next_wp0[1]);
     ptsy.push_back(next_wp1[1]);
     ptsy.push_back(next_wp2[1]);
+
+    cout << "car_d new = " << 2+4*lane << "\n";
 
     for (int i = 0; i < ptsx.size(); ++i) {
       double shift_x = ptsx[i]-ref_x;
