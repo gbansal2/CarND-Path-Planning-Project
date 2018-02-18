@@ -24,7 +24,7 @@ AND the speed of ego-car is greater than the other car, it is safe to try to cha
 
 6. All the cars in neighboring lane that we are intending to switch too has to satisfy the requirement in #5 above.
 
-7. Finally, if too_close is true, but there are no cars in neighboring lanes, it is again to switch lane (loop 
+7. Finally, if too_close is true, but there are no cars in neighboring lanes, it is again ok to switch lane (loop 
 beginning line #173).
 
 8. If too_close is true, decrement ref_val by 0.224, and if ref_val is lower than 49.5 miles/hour, increment 
